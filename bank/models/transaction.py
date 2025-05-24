@@ -58,7 +58,7 @@ class Transaction:
             raise ValueError(
                 "Transfers must have both source and destination account IDs."
             )
-        
+
     def __str__(self):
         return (
             f"Transaction(type={self.type}, amount={self.amount}, "
@@ -67,6 +67,7 @@ class Transaction:
             f"description={self.description}, transaction_id={self.transaction_id}, "
             f"transaction_timestamp={self.transaction_timestamp}, status={self.status})"
         )
+
 
 if __name__ == "__main__":
     # Example usage

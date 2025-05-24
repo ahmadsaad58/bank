@@ -64,6 +64,8 @@ if __name__ == "__main__":
     print("*** Creating ContactInfo Instance ***")
     user_contact = ContactInfo(email="john.doe@example.com", phone="555-123-4567")
     print(f"Created ContactInfo: {user_contact}")
+    user_contact = ContactInfo(email="john.doe@example.com")
+    print(f"Created ContactInfo: {user_contact}")
 
     print()
     print("*** Creating User Instance ***")
@@ -74,4 +76,3 @@ if __name__ == "__main__":
         contact_info=user_contact,
     )
     print(f"Created User: {user}")
-
