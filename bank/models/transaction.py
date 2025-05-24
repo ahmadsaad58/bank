@@ -38,7 +38,11 @@ class Transaction:
     # Default status is PENDING
     status: TransactionStatus = TransactionStatus.PENDING
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Post-initialization checks and setup for the Transaction instance.
+        Raises:
+            ValueError: If the amount is negative or zero, or if the transaction type requires a source or destination account ID that is not provided.
+        """
         if self.amount <= 0:
             raise ValueError("Transaction amount must be positive.")
         if (
@@ -51,17 +55,15 @@ class Transaction:
             and self.destination_account_id is None
         ):
             raise ValueError(f"{self.type.value} must have a destination_account_id.")
-        if self.type in [
-            TransactionType.TRANSFER_IN,
-            TransactionType.TRANSFER_OUT,
-        ] and (self.source_account_id is None or self.destination_account_id is None):
+        if self.type in [TransactionType.TRANSFER_IN, TransactionType.TRANSFER_OUT] and (self.source_account_id is None and self.destination_account_id is None):
             raise ValueError(
                 "Transfers must have both source and destination account IDs."
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Returns a string representation of the Transaction instance."""
         return (
-            f"Transaction(type={self.type}, amount={self.amount}, "
+            f"Transaction(type={self.type}, amount={self.amount:.2f}, "
             f"currency={self.currency}, source_account_id={self.source_account_id}, "
             f"destination_account_id={self.destination_account_id}, "
             f"description={self.description}, transaction_id={self.transaction_id}, "
@@ -73,3 +75,112 @@ if __name__ == "__main__":
     # Example usage
     print("*** Printing Docstrings ***")
     print(Transaction.__doc__)
+
+    from bank.models.user import ContactInfo, User
+
+    # Creating a User
+    user = User(
+        username="john.doe",
+        first_name="John",
+        last_name="Doe",
+        contact_info=ContactInfo(email="john.doe@example.com", phone="555-123-4567"),
+    )
+
+    from bank.models.bank_account import BankAccount
+    from bank.models.enums import AccountType
+
+    # Creating a BankAccount
+    user_checking = BankAccount(
+        account_type=AccountType.CHECKING,
+        currency="USD",
+        owners=[user.user_id],
+        initial_deposit=500.00,
+    )
+    user_savings = BankAccount(
+        account_type=AccountType.SAVINGS,
+        currency="USD",
+        owners=[user.user_id],
+        initial_deposit=1000.00,
+    )
+
+    # Creating a Transaction
+    print("*** Creating a Transaction ***")
+    deposit_transaction = Transaction(
+        type=TransactionType.DEPOSIT,
+        amount=200.00,
+        currency="USD",
+        destination_account_id=user_checking.account_id,
+        description="First deposit"
+    )   
+    print(deposit_transaction)
+
+    print()
+    print("*** Depositing Money into User Checking Account ***")
+    user_checking.process_transaction(deposit_transaction)
+
+    print()
+    print("*** Mismatch Currency Transaction ***")
+    user_checking.process_transaction(
+        Transaction(
+            type=TransactionType.DEPOSIT,
+            amount=200.00,
+            currency="EUR",
+            destination_account_id=user_checking.account_id,
+            description="Deposit in different currency"
+        )
+    )
+
+    print()
+    print("*** Withdrawing Money from User Checking Account ***")
+    user_checking.process_transaction(
+        Transaction(
+            type=TransactionType.WITHDRAWAL,
+            amount=100.00,
+            currency="USD",
+            source_account_id=user_checking.account_id,
+            description="First withdrawal"
+        )
+    )
+
+    print()
+    print("*** Transferring Money from User Checking Account to User Savings Account ***")
+    print("*** For every transfer, there should be 2 transactions created, one in and one out ***")
+    transfer_out = Transaction(
+            type=TransactionType.TRANSFER_OUT,
+            amount=100.00,
+            currency="USD",
+            source_account_id=user_checking.account_id,
+            destination_account_id=user_savings.account_id,
+            description="Transfer out of checking account"
+        )
+    
+    transfer_in = Transaction(
+            type=TransactionType.TRANSFER_IN,
+            amount=100.00,
+            currency="USD",
+            source_account_id=user_checking.account_id,
+            destination_account_id=user_savings.account_id,
+            description="Transfer in to savings account"
+        )
+    
+    user_checking.process_transaction(transfer_out)
+    user_savings.process_transaction(transfer_in)
+
+    print()
+    print("*** Withdrawing Excess Money from User Checking Account ***")
+    user_checking.process_transaction(
+        Transaction(
+            type=TransactionType.WITHDRAWAL,
+            amount=1_000.00,
+            currency="USD",
+            source_account_id=user_checking.account_id,
+            description="Withdrawal exceeding balance"
+        )
+    )
+
+    print()
+    print("*** Printing User Transaction History ***")
+    print(user_checking.transaction_history)
+    print(user_savings.transaction_history)
+    
+

@@ -23,13 +23,11 @@ class AccountStatus(Enum):
     - ACTIVE: The account is active and can be used for transactions.
     - CLOSED: The account has been closed and cannot be used for transactions.
     - FROZEN: The account is frozen and cannot be used for transactions.
-    - PENDING: The account is pending verification or approval.
     """
 
     ACTIVE = "ACTIVE"
     CLOSED = "CLOSED"
     FROZEN = "FROZEN"
-    PENDING = "PENDING"
     # TODO: Add more account statuses
 
 
@@ -59,13 +57,11 @@ class TransactionStatus(Enum):
     - PENDING: The transaction is pending and has not yet been completed.
     - COMPLETED: The transaction has been completed successfully.
     - FAILED: The transaction has failed and was not completed.
-    - REVERSED: The transaction has been reversed.
     - CANCELLED: The transaction has been cancelled.
     """
 
     PENDING = "PENDING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
-    REVERSED = "REVERSED"
     CANCELLED = "CANCELLED"
     # TODO: Add more transaction statuses
