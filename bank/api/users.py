@@ -130,10 +130,10 @@ def delete_user(user_name: str) -> str:
         return jsonify({"error": "User not found"}), 404
     USERS.pop(user_name, None)
     accounts_to_remove = ACCOUNTS.pop(user_name, None)
-    save_data()
     if accounts_to_remove:
         for bank_account in accounts_to_remove:
             ACCOUNT_NAME_TO_USERNAME.pop(bank_account.account_name, None)
+    save_data()
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify({"message": f"User {user_name} deleted"}), 200
