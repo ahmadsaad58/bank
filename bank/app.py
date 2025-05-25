@@ -37,7 +37,6 @@ def get_all_users() -> str:
     users_data = [user.__dict__ for user in USERS.values()]
     return jsonify(users_data), 200
 
-
 @app.route("/api/v1/users/<string:user_name>", methods=["GET"])
 def get_user(user_name: str) -> str:
     """Retrieve a user by their unique user_id.
@@ -50,7 +49,6 @@ def get_user(user_name: str) -> str:
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify(user.__dict__), 200
-
 
 @app.route("/api/v1/users", methods=["POST"])
 def create_user() -> str:
@@ -96,7 +94,6 @@ def create_user() -> str:
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-
 @app.route("/api/v1/users/<string:user_name>", methods=["PUT"])
 def update_user(user_name: str) -> str:
     """Update a user's information.
@@ -128,7 +125,6 @@ def update_user(user_name: str) -> str:
     except Exception as e:
         return jsonify({"error": f"Failed to update user: {str(e)}"}), 400
 
-
 @app.route("/api/v1/users/<string:user_name>", methods=["DELETE"])
 def delete_user(user_name: str) -> str:
     """Delete a user by their unique user_id.
@@ -159,7 +155,6 @@ def get_all_accounts() -> str:
     }
     return jsonify(accounts_data), 200
 
-
 @app.route("/api/v1/accounts/<string:user_name>", methods=["GET"])
 def get_account(user_name: str) -> str:
     """Retrieve bank accounts by user name.
@@ -172,7 +167,6 @@ def get_account(user_name: str) -> str:
     if not accounts:
         return jsonify({"error": "User not found"}), 404
     return jsonify([account.serialize_dict() for account in accounts]), 200
-
 
 @app.route("/api/v1/accounts", methods=["POST"])
 def create_account() -> str:
