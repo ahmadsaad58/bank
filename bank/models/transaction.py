@@ -16,8 +16,8 @@ class Transaction:
         type (TransactionType): The type of the transaction (e.g., deposit, withdrawal).
         amount (float): The amount of money involved in the transaction.
         currency (str): The currency of the transaction (e.g., USD, EUR).
-        source_account_id (str | None): The UUID of the source account. Defaults to None.
-        destination_account_id (str | None): The UUID of the destination account. Defaults to None.
+        source_account_name (str | None): The UUID of the source account. Defaults to None.
+        destination_account_name (str | None): The UUID of the destination account. Defaults to None.
         description (str | None): A description of the transaction. Defaults to None.
         transaction_id (str): A unique identifier for the transaction. Generated automatically.
         transaction_timestamp (str): The timestamp when the transaction occurred. Generated automatically.
@@ -28,9 +28,9 @@ class Transaction:
     amount: float
     currency: str
     # UUID of the source account
-    source_account_id: str | None = None
+    source_account_name: str | None = None
     # UUID of the destination account
-    destination_account_id: str | None = None
+    destination_account_name: str | None = None
     description: str | None = None
     transaction_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     # Based on unix timestamp
@@ -47,18 +47,20 @@ class Transaction:
             raise ValueError("Transaction amount must be positive.")
         if (
             self.type in [TransactionType.TRANSFER_OUT, TransactionType.WITHDRAWAL]
-            and self.source_account_id is None
+            and self.source_account_name is None
         ):
             raise ValueError(f"{self.type.value} must have a source_account_id.")
         if (
             self.type in [TransactionType.TRANSFER_IN, TransactionType.DEPOSIT]
-            and self.destination_account_id is None
+            and self.destination_account_name is None
         ):
             raise ValueError(f"{self.type.value} must have a destination_account_id.")
         if self.type in [
             TransactionType.TRANSFER_IN,
             TransactionType.TRANSFER_OUT,
-        ] and (self.source_account_id is None and self.destination_account_id is None):
+        ] and (
+            self.source_account_name is None and self.destination_account_name is None
+        ):
             raise ValueError(
                 "Transfers must have both source and destination account IDs."
             )
@@ -67,8 +69,8 @@ class Transaction:
         """Returns a string representation of the Transaction instance."""
         return (
             f"Transaction(type={self.type}, amount={self.amount:.2f}, "
-            f"currency={self.currency}, source_account_id={self.source_account_id}, "
-            f"destination_account_id={self.destination_account_id}, "
+            f"currency={self.currency}, source_account_name={self.source_account_name}, "
+            f"destination_account_name={self.destination_account_name}, "
             f"description={self.description}, transaction_id={self.transaction_id}, "
             f"transaction_timestamp={self.transaction_timestamp}, status={self.status})"
         )
@@ -82,8 +84,8 @@ class Transaction:
             "type": self.type.value,
             "amount": self.amount,
             "currency": self.currency,
-            "source_account_id": self.source_account_id,
-            "destination_account_id": self.destination_account_id,
+            "source_account_name": self.source_account_name,
+            "destination_account_name": self.destination_account_name,
             "description": self.description,
             "transaction_id": self.transaction_id,
             "transaction_timestamp": self.transaction_timestamp,
@@ -129,7 +131,7 @@ if __name__ == "__main__":
         type=TransactionType.DEPOSIT,
         amount=200.00,
         currency="USD",
-        destination_account_id=user_checking.account_id,
+        destination_account_name=user_checking.account_name,
         description="First deposit",
     )
     print(deposit_transaction)
@@ -145,7 +147,7 @@ if __name__ == "__main__":
             type=TransactionType.DEPOSIT,
             amount=200.00,
             currency="EUR",
-            destination_account_id=user_checking.account_id,
+            destination_account_name=user_checking.account_name,
             description="Deposit in different currency",
         )
     )
@@ -157,7 +159,7 @@ if __name__ == "__main__":
             type=TransactionType.WITHDRAWAL,
             amount=100.00,
             currency="USD",
-            source_account_id=user_checking.account_id,
+            source_account_name=user_checking.account_name,
             description="First withdrawal",
         )
     )
@@ -173,8 +175,8 @@ if __name__ == "__main__":
         type=TransactionType.TRANSFER_OUT,
         amount=100.00,
         currency="USD",
-        source_account_id=user_checking.account_id,
-        destination_account_id=user_savings.account_id,
+        source_account_name=user_checking.account_name,
+        destination_account_name=user_savings.account_name,
         description="Transfer out of checking account",
     )
 
@@ -182,8 +184,8 @@ if __name__ == "__main__":
         type=TransactionType.TRANSFER_IN,
         amount=100.00,
         currency="USD",
-        source_account_id=user_checking.account_id,
-        destination_account_id=user_savings.account_id,
+        source_account_name=user_checking.account_name,
+        destination_account_name=user_savings.account_name,
         description="Transfer in to savings account",
     )
 
@@ -197,7 +199,7 @@ if __name__ == "__main__":
             type=TransactionType.WITHDRAWAL,
             amount=1_000.00,
             currency="USD",
-            source_account_id=user_checking.account_id,
+            source_account_name=user_checking.account_name,
             description="Withdrawal exceeding balance",
         )
     )

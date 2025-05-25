@@ -26,7 +26,6 @@ class BankAccount:
         account_owner (str): The owner of the account. This should be a username.
         initial_deposit (float): The initial deposit amount. Defaults to 0.0.
         account_id (str): A unique identifier for the account. Generated automatically.
-        account_number (str): A unique number for the account. Generated automatically.
         account_name (str): A name for the account, generated from the account type and number.
         balance (float): The current balance of the account. Managed dynamically.
         transaction_history (List[Transaction]): A list of transactions associated with the account.
@@ -40,7 +39,6 @@ class BankAccount:
     initial_deposit: float = 0.0
     # TODO: can add something for joint owners of an account
     account_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    account_number: str = field(init=False)
     account_name: str = field(init=False)
     # Balance is not set at initialization, but managed
     balance: float = 0.0
@@ -59,14 +57,13 @@ class BankAccount:
         if self.initial_deposit < 0:
             raise ValueError("Initial deposit cannot be negative.")
 
-        self.account_number = self.account_id[:5]
-        self.account_name = f"{self.account_type.value.lower()}_{self.account_number}"
+        self.account_name = f"{self.account_type.value.lower()}_{self.account_id[:5]}"
         if self.initial_deposit > 0:
             initial_deposit_txn = Transaction(
                 type=TransactionType.DEPOSIT,
                 amount=self.initial_deposit,
                 currency=self.currency,
-                destination_account_id=self.account_id,
+                destination_account_name=self.account_name,
                 description="Initial deposit",
             )
             self.process_transaction(initial_deposit_txn)
@@ -82,11 +79,11 @@ class BankAccount:
             a message, and the transaction status.
         """
         if self.status == AccountStatus.FROZEN:
-            print(f"Error: Account {self.account_number} is frozen.")
+            print(f"Error: Account {self.account_name} is frozen.")
             transaction.status = TransactionStatus.FAILED
             return False, "Account is frozen", transaction.status
         if self.status == AccountStatus.CLOSED:
-            print(f"Error: Account {self.account_number} is closed.")
+            print(f"Error: Account {self.account_name} is closed.")
             transaction.status = TransactionStatus.FAILED
             return False, "Account is closed", transaction.status
 
@@ -125,8 +122,8 @@ class BankAccount:
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
 
-        if transaction.destination_account_id != self.account_id:
-            print(f"Error: Deposit transaction destination account ID mismatch.")
+        if transaction.destination_account_name != self.account_name:
+            print(f"Error: Deposit transaction destination account name mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False, "Destination account ID mismatch", transaction.status
         if transaction.amount <= 0:
@@ -142,7 +139,7 @@ class BankAccount:
             self.status = AccountStatus.ACTIVE
         transaction.status = TransactionStatus.COMPLETED
         print(
-            f"Processed DEPOSIT: Account {self.account_number} new balance: {self.balance:.2f}"
+            f"Processed DEPOSIT: Account {self.account_name} new balance: {self.balance:.2f}"
         )
         return True, "Deposit successful", transaction.status
 
@@ -159,8 +156,8 @@ class BankAccount:
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
 
-        if transaction.source_account_id != self.account_id:
-            print(f"Error: Withdrawal transaction source account ID mismatch.")
+        if transaction.source_account_name != self.account_name:
+            print(f"Error: Withdrawal transaction source account name mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False, "Source account ID mismatch", transaction.status
         if transaction.amount <= 0:
@@ -175,12 +172,12 @@ class BankAccount:
             self.balance -= transaction.amount
             transaction.status = TransactionStatus.COMPLETED
             print(
-                f"Processed WITHDRAWAL: Account {self.account_number} new balance: {self.balance:.2f}"
+                f"Processed WITHDRAWAL: Account {self.account_name} new balance: {self.balance:.2f}"
             )
             return True, "Withdrawal successful", transaction.status
         else:
             print(
-                f"Insufficient funds for withdrawal from account {self.account_number}."
+                f"Insufficient funds for withdrawal from account {self.account_name}."
             )
             transaction.status = TransactionStatus.FAILED
             return False, "Insufficient funds", transaction.status
@@ -198,8 +195,8 @@ class BankAccount:
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
 
-        if transaction.destination_account_id != self.account_id:
-            print(f"Error: Transfer_IN transaction destination account ID mismatch.")
+        if transaction.destination_account_name != self.account_name:
+            print(f"Error: Transfer_IN transaction destination account name mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False, "Destination account ID mismatch", transaction.status
         if transaction.amount <= 0:
@@ -215,7 +212,7 @@ class BankAccount:
             self.status = AccountStatus.ACTIVE
         transaction.status = TransactionStatus.COMPLETED
         print(
-            f"Processed TRANSFER_IN: Account {self.account_number} new balance: {self.balance:.2f}"
+            f"Processed TRANSFER_IN: Account {self.account_name} new balance: {self.balance:.2f}"
         )
         return True, "Transfer_IN successful", transaction.status
 
@@ -232,11 +229,11 @@ class BankAccount:
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
 
-        if transaction.source_account_id != self.account_id:
-            print(f"Error: Transfer_OUT transaction source account ID mismatch.")
+        if transaction.source_account_name != self.account_name:
+            print(f"Error: Transfer_OUT transaction source account name mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False, "Source account ID mismatch", transaction.status
-        if transaction.destination_account_id is None:
+        if transaction.destination_account_name is None:
             print(f"Error: Transfer_OUT transaction destination account ID is None.")
             transaction.status = TransactionStatus.FAILED
             return False, "Destination account ID is None", transaction.status
@@ -250,15 +247,14 @@ class BankAccount:
             )
         if self.balance >= transaction.amount:
             self.balance -= transaction.amount
-            # TODO: NEED TO ADD AMOUNT TO DESTINATION ACCOUNT
             transaction.status = TransactionStatus.COMPLETED
             print(
-                f"Processed TRANSFER_OUT: Account {self.account_number} new balance: {self.balance:.2f}"
+                f"Processed TRANSFER_OUT: Account {self.account_name} new balance: {self.balance:.2f}"
             )
             return True, "Transfer_OUT successful", transaction.status
         else:
             print(
-                f"Insufficient funds for Transfer_OUT from account {self.account_number}."
+                f"Insufficient funds for Transfer_OUT from account {self.account_name}."
             )
             transaction.status = TransactionStatus.FAILED
             return False, "Insufficient funds", transaction.status
@@ -276,21 +272,19 @@ class BankAccount:
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
 
-        if transaction.source_account_id != self.account_id:
-            print(f"Error: Fee transaction source account ID mismatch.")
+        if transaction.source_account_name != self.account_name:
+            print(f"Error: Fee transaction source account name mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False
         if self.balance >= transaction.amount:
             self.balance -= transaction.amount
             transaction.status = TransactionStatus.COMPLETED
             print(
-                f"Processed FEE: Account {self.account_number} new balance: {self.balance:.2f}"
+                f"Processed FEE: Account {self.account_name} new balance: {self.balance:.2f}"
             )
             return True
         else:
-            print(
-                f"Insufficient funds to deduct fee from account {self.account_number}."
-            )
+            print(f"Insufficient funds to deduct fee from account {self.account_name}.")
             self.status = AccountStatus.FROZEN
             transaction.status = TransactionStatus.FAILED
             return False
@@ -334,8 +328,8 @@ class BankAccount:
         return (
             f"BankAccount(account_type={self.account_type}, currency={self.currency}, "
             f"account_owner={self.account_owner}, initial_deposit={self.initial_deposit:.2f}, "
-            f"account_id={self.account_id}, account_number={self.account_number}, "
-            f"account_name={self.account_name}, balance={self.balance:.2f}, "
+            f"account_id={self.account_id}, account_name={self.account_name}, "
+            f"balance={self.balance:.2f}, "
             f"created_at={self.created_at}, status={self.status}, "
             f"transaction_history={self.transaction_history})"
         )
@@ -349,9 +343,7 @@ class BankAccount:
             "account_type": self.account_type.value,
             "currency": self.currency,
             "account_owner": self.account_owner,
-            "initial_deposit": self.initial_deposit,
             "account_id": self.account_id,
-            "account_number": self.account_number,
             "account_name": self.account_name,
             "balance": self.balance,
             "created_at": self.created_at,
