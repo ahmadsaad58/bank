@@ -49,12 +49,12 @@ class Transaction:
             self.type in [TransactionType.TRANSFER_OUT, TransactionType.WITHDRAWAL]
             and self.source_account_name is None
         ):
-            raise ValueError(f"{self.type.value} must have a source_account_id.")
+            raise ValueError(f"{self.type.value} must have a source_account_name.")
         if (
             self.type in [TransactionType.TRANSFER_IN, TransactionType.DEPOSIT]
             and self.destination_account_name is None
         ):
-            raise ValueError(f"{self.type.value} must have a destination_account_id.")
+            raise ValueError(f"{self.type.value} must have a destination_account_name.")
         if self.type in [
             TransactionType.TRANSFER_IN,
             TransactionType.TRANSFER_OUT,
@@ -62,7 +62,7 @@ class Transaction:
             self.source_account_name is None and self.destination_account_name is None
         ):
             raise ValueError(
-                "Transfers must have both source and destination account IDs."
+                "Transfers must have both source and destination account names."
             )
 
     def __str__(self) -> str:
