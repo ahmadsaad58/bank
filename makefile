@@ -39,7 +39,11 @@ update-dependencies:
 
 # --- Code Execution ---
 
-# run: Runs the main application script
+docker-run:
+	@echo "Running $(APP_SCRIPT) in Docker..."
+	docker build -t simple-bank-api .
+	docker run -p 5001:5001 -v ${PWD}/data:/app/data simple-bank-api
+
 run:
 	@echo "Running $(APP_SCRIPT)..."
 	python -m $(BASE_FOLDER).$(APP_SCRIPT)

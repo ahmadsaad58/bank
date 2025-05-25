@@ -17,7 +17,7 @@ ACCOUNTS: Dict[str, List[BankAccount]] = defaultdict(list)
 # Store all Transactions, typically linked to accounts for history retrieval
 TRANSACTIONS: List[Transaction] = []
 
-DATA_PATH = "bank_data.pkl"
+DATA_PATH = "data/bank_data.pkl"
 
 def save_data():
     with open(DATA_PATH, "wb") as f:
