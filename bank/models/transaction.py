@@ -55,7 +55,10 @@ class Transaction:
             and self.destination_account_id is None
         ):
             raise ValueError(f"{self.type.value} must have a destination_account_id.")
-        if self.type in [TransactionType.TRANSFER_IN, TransactionType.TRANSFER_OUT] and (self.source_account_id is None and self.destination_account_id is None):
+        if self.type in [
+            TransactionType.TRANSFER_IN,
+            TransactionType.TRANSFER_OUT,
+        ] and (self.source_account_id is None and self.destination_account_id is None):
             raise ValueError(
                 "Transfers must have both source and destination account IDs."
             )
@@ -69,6 +72,23 @@ class Transaction:
             f"description={self.description}, transaction_id={self.transaction_id}, "
             f"transaction_timestamp={self.transaction_timestamp}, status={self.status})"
         )
+
+    def serialize_dict(self) -> dict:
+        """Serializes the Transaction instance to a dictionary.
+        Returns:
+            dict: A dictionary representation of the Transaction instance.
+        """
+        return {
+            "type": self.type.value,
+            "amount": self.amount,
+            "currency": self.currency,
+            "source_account_id": self.source_account_id,
+            "destination_account_id": self.destination_account_id,
+            "description": self.description,
+            "transaction_id": self.transaction_id,
+            "transaction_timestamp": self.transaction_timestamp,
+            "status": self.status.value,
+        }
 
 
 if __name__ == "__main__":
@@ -93,13 +113,13 @@ if __name__ == "__main__":
     user_checking = BankAccount(
         account_type=AccountType.CHECKING,
         currency="USD",
-        owners=[user.user_id],
+        account_owner=user.username,
         initial_deposit=500.00,
     )
     user_savings = BankAccount(
         account_type=AccountType.SAVINGS,
         currency="USD",
-        owners=[user.user_id],
+        account_owner=user.username,
         initial_deposit=1000.00,
     )
 
@@ -110,8 +130,8 @@ if __name__ == "__main__":
         amount=200.00,
         currency="USD",
         destination_account_id=user_checking.account_id,
-        description="First deposit"
-    )   
+        description="First deposit",
+    )
     print(deposit_transaction)
 
     print()
@@ -126,7 +146,7 @@ if __name__ == "__main__":
             amount=200.00,
             currency="EUR",
             destination_account_id=user_checking.account_id,
-            description="Deposit in different currency"
+            description="Deposit in different currency",
         )
     )
 
@@ -138,31 +158,35 @@ if __name__ == "__main__":
             amount=100.00,
             currency="USD",
             source_account_id=user_checking.account_id,
-            description="First withdrawal"
+            description="First withdrawal",
         )
     )
 
     print()
-    print("*** Transferring Money from User Checking Account to User Savings Account ***")
-    print("*** For every transfer, there should be 2 transactions created, one in and one out ***")
+    print(
+        "*** Transferring Money from User Checking Account to User Savings Account ***"
+    )
+    print(
+        "*** For every transfer, there should be 2 transactions created, one in and one out ***"
+    )
     transfer_out = Transaction(
-            type=TransactionType.TRANSFER_OUT,
-            amount=100.00,
-            currency="USD",
-            source_account_id=user_checking.account_id,
-            destination_account_id=user_savings.account_id,
-            description="Transfer out of checking account"
-        )
-    
+        type=TransactionType.TRANSFER_OUT,
+        amount=100.00,
+        currency="USD",
+        source_account_id=user_checking.account_id,
+        destination_account_id=user_savings.account_id,
+        description="Transfer out of checking account",
+    )
+
     transfer_in = Transaction(
-            type=TransactionType.TRANSFER_IN,
-            amount=100.00,
-            currency="USD",
-            source_account_id=user_checking.account_id,
-            destination_account_id=user_savings.account_id,
-            description="Transfer in to savings account"
-        )
-    
+        type=TransactionType.TRANSFER_IN,
+        amount=100.00,
+        currency="USD",
+        source_account_id=user_checking.account_id,
+        destination_account_id=user_savings.account_id,
+        description="Transfer in to savings account",
+    )
+
     user_checking.process_transaction(transfer_out)
     user_savings.process_transaction(transfer_in)
 
@@ -174,7 +198,7 @@ if __name__ == "__main__":
             amount=1_000.00,
             currency="USD",
             source_account_id=user_checking.account_id,
-            description="Withdrawal exceeding balance"
+            description="Withdrawal exceeding balance",
         )
     )
 
@@ -182,5 +206,3 @@ if __name__ == "__main__":
     print("*** Printing User Transaction History ***")
     print(user_checking.transaction_history)
     print(user_savings.transaction_history)
-    
-

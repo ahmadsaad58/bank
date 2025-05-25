@@ -1,7 +1,8 @@
 # --- Configuration Variables ---
 ENV_NAME = bank
+BASE_FOLDER = bank
 PYTHON_VERSION = 3.13.2
-APP_SCRIPT = app.py
+APP_SCRIPT = app
 REQUIREMENTS_FILE = requirements.txt
 CONDA_ENV_FILE = environment.yml
 
@@ -41,7 +42,7 @@ update-dependencies:
 # run: Runs the main application script
 run:
 	@echo "Running $(APP_SCRIPT)..."
-	conda run -n $(ENV_NAME) python $(APP_SCRIPT)
+	python -m $(BASE_FOLDER).$(APP_SCRIPT)
 
 # test: Runs tests using pytest
 test:

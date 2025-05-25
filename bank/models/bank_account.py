@@ -7,11 +7,11 @@ from bank.models.enums import (AccountStatus, AccountType, TransactionStatus,
                                TransactionType)
 from bank.models.transaction import Transaction
 
-
 BLOCKED_ACCOUNT_STATUSES = [
     AccountStatus.FROZEN,
     AccountStatus.CLOSED,
 ]
+
 
 @dataclass
 class BankAccount:
@@ -23,7 +23,7 @@ class BankAccount:
     Attributes:
         account_type (AccountType): The type of the bank account (e.g., savings, checking).
         currency (str): The currency of the account (e.g., USD, EUR).
-        owners (List[str]): A list of user IDs who own this account.
+        account_owner (str): The owner of the account. This should be a username.
         initial_deposit (float): The initial deposit amount. Defaults to 0.0.
         account_id (str): A unique identifier for the account. Generated automatically.
         account_number (str): A unique number for the account. Generated automatically.
@@ -36,14 +36,14 @@ class BankAccount:
 
     account_type: AccountType
     currency: str
-    # List of user_ids who own this account
-    owners: List[str]
+    account_owner: str
     initial_deposit: float = 0.0
+    # TODO: can add something for joint owners of an account
     account_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     account_number: str = field(init=False)
     account_name: str = field(init=False)
     # Balance is not set at initialization, but managed
-    balance: float = field(init=False)
+    balance: float = 0.0
     transaction_history: List[Transaction] = field(default_factory=list)
     created_at: str = field(default_factory=lambda: time.time())
     # Default status is ACTIVE
@@ -54,16 +54,26 @@ class BankAccount:
         Raises:
             ValueError: If the initial deposit is negative or if there are no owners.
         """
-        if not self.owners:
-            raise ValueError("An account must have at least one owner.")
+        if not self.account_owner:
+            raise ValueError("An account must have at an owner.")
         if self.initial_deposit < 0:
             raise ValueError("Initial deposit cannot be negative.")
 
         self.account_number = self.account_id[:5]
         self.account_name = f"{self.account_type.value.lower()}_{self.account_number}"
-        self.balance = self.initial_deposit
+        if self.initial_deposit > 0:
+            initial_deposit_txn = Transaction(
+                type=TransactionType.DEPOSIT,
+                amount=self.initial_deposit,
+                currency=self.currency,
+                destination_account_id=self.account_id,
+                description="Initial deposit",
+            )
+            self.process_transaction(initial_deposit_txn)
 
-    def _process_blocked_account_transaction(self, transaction: Transaction) -> Tuple[bool, str, TransactionStatus]:
+    def _process_blocked_account_transaction(
+        self, transaction: Transaction
+    ) -> Tuple[bool, str, TransactionStatus]:
         """Internal method to processes a transaction for a blocked account.
         Args:
             transaction (Transaction): The transaction to process.
@@ -79,7 +89,7 @@ class BankAccount:
             print(f"Error: Account {self.account_number} is closed.")
             transaction.status = TransactionStatus.FAILED
             return False, "Account is closed", transaction.status
-            
+
     def _process_currency(
         self, transaction: Transaction
     ) -> Tuple[bool, str, TransactionStatus]:
@@ -92,13 +102,15 @@ class BankAccount:
         """
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
-    
+
         if transaction.currency != self.currency:
             print(
                 f"Error: Transaction currency ({transaction.currency}) does not match account currency ({self.currency})."
             )
             transaction.status = TransactionStatus.FAILED
             return False, "Currency mismatch", transaction.status
+
+        # TODO: Add currency conversion logic
 
     def _process_deposit(
         self, transaction: Transaction
@@ -112,7 +124,7 @@ class BankAccount:
         """
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
-        
+
         if transaction.destination_account_id != self.account_id:
             print(f"Error: Deposit transaction destination account ID mismatch.")
             transaction.status = TransactionStatus.FAILED
@@ -133,7 +145,7 @@ class BankAccount:
             f"Processed DEPOSIT: Account {self.account_number} new balance: {self.balance:.2f}"
         )
         return True, "Deposit successful", transaction.status
-    
+
     def _process_withdrawl(
         self, transaction: Transaction
     ) -> Tuple[bool, str, TransactionStatus]:
@@ -146,7 +158,7 @@ class BankAccount:
         """
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
-        
+
         if transaction.source_account_id != self.account_id:
             print(f"Error: Withdrawal transaction source account ID mismatch.")
             transaction.status = TransactionStatus.FAILED
@@ -172,8 +184,10 @@ class BankAccount:
             )
             transaction.status = TransactionStatus.FAILED
             return False, "Insufficient funds", transaction.status
-        
-    def _process_transfer_in(self, transaction: Transaction) -> Tuple[bool, str, TransactionStatus]:
+
+    def _process_transfer_in(
+        self, transaction: Transaction
+    ) -> Tuple[bool, str, TransactionStatus]:
         """Internal method to processes a transfer in transaction.
         Args:
             transaction (Transaction): The transaction to process.
@@ -183,11 +197,9 @@ class BankAccount:
         """
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
-        
+
         if transaction.destination_account_id != self.account_id:
-            print(
-                f"Error: Transfer_IN transaction destination account ID mismatch."
-            )
+            print(f"Error: Transfer_IN transaction destination account ID mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False, "Destination account ID mismatch", transaction.status
         if transaction.amount <= 0:
@@ -206,8 +218,10 @@ class BankAccount:
             f"Processed TRANSFER_IN: Account {self.account_number} new balance: {self.balance:.2f}"
         )
         return True, "Transfer_IN successful", transaction.status
-    
-    def _process_transfer_out(self, transaction: Transaction) -> Tuple[bool, str, TransactionStatus]:
+
+    def _process_transfer_out(
+        self, transaction: Transaction
+    ) -> Tuple[bool, str, TransactionStatus]:
         """Internal method to processes a transfer out transaction.
         Args:
             transaction (Transaction): The transaction to process.
@@ -217,19 +231,17 @@ class BankAccount:
         """
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
-        
+
         if transaction.source_account_id != self.account_id:
             print(f"Error: Transfer_OUT transaction source account ID mismatch.")
             transaction.status = TransactionStatus.FAILED
             return False, "Source account ID mismatch", transaction.status
-        if transaction.destination_account_id is None: 
+        if transaction.destination_account_id is None:
             print(f"Error: Transfer_OUT transaction destination account ID is None.")
             transaction.status = TransactionStatus.FAILED
             return False, "Destination account ID is None", transaction.status
         if transaction.amount <= 0:
-            print(
-                f"Error: Transfer_OUT amount must be positive and greater than 0."
-            )
+            print(f"Error: Transfer_OUT amount must be positive and greater than 0.")
             transaction.status = TransactionStatus.FAILED
             return (
                 False,
@@ -250,8 +262,10 @@ class BankAccount:
             )
             transaction.status = TransactionStatus.FAILED
             return False, "Insufficient funds", transaction.status
-        
-    def _process_fee(self, transaction: Transaction) -> Tuple[bool, str, TransactionStatus]:
+
+    def _process_fee(
+        self, transaction: Transaction
+    ) -> Tuple[bool, str, TransactionStatus]:
         """Internal method to processes a fee transaction.
         Args:
             transaction (Transaction): The transaction to process.
@@ -261,7 +275,7 @@ class BankAccount:
         """
         if self.status in BLOCKED_ACCOUNT_STATUSES:
             return self._process_blocked_account_transaction(transaction)
-        
+
         if transaction.source_account_id != self.account_id:
             print(f"Error: Fee transaction source account ID mismatch.")
             transaction.status = TransactionStatus.FAILED
@@ -292,7 +306,7 @@ class BankAccount:
         """
         # All transactions will go in history even the failed ones
         self.transaction_history.append(transaction)
-        
+
         if transaction.currency != self.currency:
             return self._process_currency(transaction)
         if transaction.type == TransactionType.DEPOSIT:
@@ -319,11 +333,34 @@ class BankAccount:
         """
         return (
             f"BankAccount(account_type={self.account_type}, currency={self.currency}, "
-            f"owners={self.owners}, initial_deposit={self.initial_deposit:.2f}, "
+            f"account_owner={self.account_owner}, initial_deposit={self.initial_deposit:.2f}, "
             f"account_id={self.account_id}, account_number={self.account_number}, "
             f"account_name={self.account_name}, balance={self.balance:.2f}, "
-            f"created_at={self.created_at}, status={self.status})"
+            f"created_at={self.created_at}, status={self.status}, "
+            f"transaction_history={self.transaction_history})"
         )
+
+    def serialize_dict(self) -> dict:
+        """Serializes the BankAccount instance to a dictionary.
+        Returns:
+            dict: A dictionary representation of the BankAccount instance.
+        """
+        return {
+            "account_type": self.account_type.value,
+            "currency": self.currency,
+            "account_owner": self.account_owner,
+            "initial_deposit": self.initial_deposit,
+            "account_id": self.account_id,
+            "account_number": self.account_number,
+            "account_name": self.account_name,
+            "balance": self.balance,
+            "created_at": self.created_at,
+            "status": self.status.value,
+            "transaction_history": [
+                txn.serialize_dict() for txn in self.transaction_history
+            ],
+        }
+
 
 if __name__ == "__main__":
     # Example usage
@@ -345,7 +382,7 @@ if __name__ == "__main__":
     user_checking = BankAccount(
         account_type=AccountType.CHECKING,
         currency="USD",
-        owners=[user.user_id],
+        account_owner=user.username,
         initial_deposit=500.00,
     )
     print(f"Created Checking Account: {user_checking}")
@@ -354,7 +391,7 @@ if __name__ == "__main__":
     user_savings = BankAccount(
         account_type=AccountType.SAVINGS,
         currency="USD",
-        owners=[user.user_id],
+        account_owner=user.username,
         initial_deposit=1000.00,
     )
     print(f"Created Savings Account: {user_savings}")
