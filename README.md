@@ -17,6 +17,8 @@ A simple RESTful API for managing users, bank accounts, and transactions. Built 
 
 ## API Endpoints
 
+Visit `/apidocs/#/` to get more info
+
 > Replace `<user_name>`, `<account_name>`, and `<transaction_id>` with actual values.
 
 ### User Endpoints
@@ -149,3 +151,8 @@ bank/
   app.py      # Main Flask app
   README.md
 ```
+
+## Things to Add 
+1. Pagination for some endpoints would be really good. We are not adding it currently since the data is not too big
+1. Authentication could be very nice but that might be more add more friction than needed
+1. Robust validation with Pydantic or Marshmellow would be great but leaving that out too

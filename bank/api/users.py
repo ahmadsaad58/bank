@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
-from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS, save_data
+from bank.api.data.data import (ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS,
+                                save_data)
 from bank.models.user import ContactInfo, User
 
 users_bp = Blueprint("users", __name__)
@@ -9,8 +10,12 @@ users_bp = Blueprint("users", __name__)
 @users_bp.route("/api/v1/users", methods=["GET"])
 def get_all_users() -> str:
     """Retrieve all users in the system.
-    Returns:
-        str: A JSON response containing a list of all users.
+    ---
+    tags:
+      - Users
+    responses:
+        200:
+            description: A JSON response containing a list of all users.
     """
     users_data = [user.__dict__ for user in USERS.values()]
     return (
@@ -26,11 +31,22 @@ def get_all_users() -> str:
 
 @users_bp.route("/api/v1/users/<string:user_name>", methods=["GET"])
 def get_user(user_name: str) -> str:
-    """Retrieve a user by their unique user_id.
-    Args:
-        user_name (str): The unique username of the user to retrieve.
-    Returns:
-        str: A JSON response containing the user's information.
+    """Retrieve a user by their unique user name.
+    ---
+    tags:
+      - Users
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user to retrieve.
+          schema:
+            type: string
+    responses:
+        200:
+            description: A JSON response containing the user's information.
+        404:
+            description: User not found.
     """
     user = USERS.get(user_name, None)
     if not user:
@@ -41,8 +57,37 @@ def get_user(user_name: str) -> str:
 @users_bp.route("/api/v1/users", methods=["POST"])
 def create_user() -> str:
     """Creates a new user account.
-    Returns:
-        str: A JSON response containing the created user's information.
+    ---
+    tags:
+      - Users
+    parameters:
+        - name: user
+          in: body
+          required: true
+          description: The user object to create.
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              first_name:
+                type: string
+              last_name:
+                type: string
+              contact_info:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  phone:
+                    type: string
+    responses:
+        201:
+            description: A JSON response containing the created user's information.
+        400:
+            description: Bad request, missing required fields or invalid data.
+        500:
+            description: Internal server error.
     """
     data = request.get_json()
     # Validate the input data
@@ -86,11 +131,42 @@ def create_user() -> str:
 
 @users_bp.route("/api/v1/users/<string:user_name>", methods=["PUT"])
 def update_user(user_name: str) -> str:
-    """Update a user's information.
-    Args:
-        user_name (str): The unique username of the user to update.
-    Returns:
-        str: A JSON response containing the updated user's information.
+    """Update a user's information. User name cannot be changed.
+    ---
+    tags:
+      - Users
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user to update.
+          schema:
+            type: string
+        - name: user
+          in: body
+          required: true
+          description: The user object with updated information.
+          schema:
+            type: object
+            properties:
+              first_name:
+                type: string
+              last_name:
+                type: string
+              contact_info:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  phone:
+                    type: string
+    responses:
+        200:
+            description: A JSON response containing the updated user's information.
+        400:
+            description: Bad request, missing required fields or invalid data.
+        404:
+            description: User not found.
     """
     user = USERS.get(user_name, None)
     if not user:
@@ -119,11 +195,22 @@ def update_user(user_name: str) -> str:
 
 @users_bp.route("/api/v1/users/<string:user_name>", methods=["DELETE"])
 def delete_user(user_name: str) -> str:
-    """Delete a user by their unique user_id.
-    Args:
-        user_name (str): The unique username of the user to delete.
-    Returns:
-        str: A JSON response confirming the deletion of the user.
+    """Delete a user by their unique user name.
+    ---
+    tags:
+      - Users
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user to delete.
+          schema:
+            type: string
+    responses:
+        200:
+            description: A JSON response confirming the deletion of the user.
+        404:
+            description: User not found.
     """
     user = USERS.get(user_name, None)
     if not user:

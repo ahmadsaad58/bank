@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
-from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS, save_data
+from bank.api.data.data import (ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS,
+                                save_data)
 from bank.models.bank_account import BankAccount
 from bank.models.enums import AccountType
 
@@ -10,8 +11,14 @@ accounts_bp = Blueprint("accounts", __name__)
 @accounts_bp.route("/api/v1/accounts", methods=["GET"])
 def get_all_accounts() -> str:
     """Retrieve all bank accounts in the system.
-    Returns:
-        str: A JSON response containing a list of all bank accounts associated with the users.
+    ---
+    tags:
+      - Accounts
+    responses:
+        200:
+            description: A JSON response containing a list of all bank accounts.
+        404:
+            description: No accounts found.
     """
     accounts_data = {
         user: [account.serialize_dict() for account in accounts]
@@ -31,10 +38,21 @@ def get_all_accounts() -> str:
 @accounts_bp.route("/api/v1/accounts/<string:user_name>", methods=["GET"])
 def get_accounts(user_name: str) -> str:
     """Retrieve bank accounts by user name.
-    Args:
-        user_name (str): The unique username of the user whose accounts to retrieve.
-    Returns:
-        str: A JSON response containing the user's bank accounts.
+    ---
+    tags:
+      - Accounts
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user whose accounts to retrieve.
+          schema:
+            type: string
+    responses:
+        200:
+            description: A JSON response containing the user's bank accounts.
+        404:
+            description: User not found.
     """
     accounts = ACCOUNTS.get(user_name, None)
     if not accounts:
@@ -45,8 +63,30 @@ def get_accounts(user_name: str) -> str:
 @accounts_bp.route("/api/v1/accounts", methods=["POST"])
 def create_account() -> str:
     """Creates a new bank account.
-    Returns:
-        str: A JSON response containing the created bank account's information.
+    ---
+    tags:
+      - Accounts
+    parameters:
+        - name: account
+          in: body
+          required: true
+          description: The account object to create.
+          schema:
+            type: object
+            properties:
+                username:
+                    type: string
+                account_type:
+                    type: string
+                initial_deposit:
+                    type: number
+                currency:
+                    type: string
+    responses:
+        201:
+            description: A JSON response containing the created bank account's information.
+        400:
+            description: Bad request, missing required fields or invalid data.
     """
     data = request.get_json()
     required_fields = ["username", "account_type", "initial_deposit", "currency"]
@@ -90,11 +130,42 @@ def create_account() -> str:
 )
 def update_account(user_name: str, account_name: str) -> str:
     """Update a bank account.
-    Args:
-        user_name (str): The unique username of the user whose account to update.
-        account_name (str): The name of the account to update.
-    Returns:
-        str: A JSON response containing the updated bank account's information.
+    ---
+    tags:
+      - Accounts
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user whose account to update.
+          schema:
+            type: string
+        - name: account_name
+          in: path
+          required: true
+          description: The name of the account to update.
+          schema:
+            type: string
+        - name: account
+          in: body
+          required: true
+          description: The account object with updated information.
+          schema:
+            type: object
+            properties:
+              account_type:
+                type: string
+              currency:
+                type: string
+              balance:
+                type: number
+    responses:
+        200:
+            description: A JSON response containing the updated bank account's information.
+        400:
+            description: Bad request, missing required fields or invalid data.
+        404:
+            description: Account not found.
     """
     accounts = ACCOUNTS.get(user_name, None)
     if not accounts:
@@ -144,11 +215,27 @@ def update_account(user_name: str, account_name: str) -> str:
 )
 def delete_account(user_name: str, account_name: str) -> str:
     """Delete a bank account.
-    Args:
-        user_name (str): The unique username of the user whose account to update.
-        account_name (str): The name of the account to update.
-    Returns:
-        str: A JSON response containing the updated bank account's information.
+    ---
+    tags:
+      - Accounts
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user whose account to delete.
+          schema:
+            type: string
+        - name: account_name
+          in: path
+          required: true
+          description: The name of the account to delete.
+          schema:
+            type: string
+    responses:
+        200:
+            description: A JSON response confirming the deletion of the account.
+        404:
+            description: Account not found.
     """
     accounts = ACCOUNTS.get(user_name, None)
     if not accounts:

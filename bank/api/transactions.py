@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
-from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, TRANSACTIONS, save_data
+from bank.api.data.data import (ACCOUNT_NAME_TO_USERNAME, ACCOUNTS,
+                                TRANSACTIONS, save_data)
 from bank.models.enums import TransactionType
 from bank.models.transaction import Transaction
 from bank.utils.utils import parse_boolean_query_param
@@ -14,11 +15,43 @@ transactions_bp = Blueprint("transactions", __name__)
 )
 def deposit(user_name: str, account_name: str) -> str:
     """Deposit into a bank account.
-    Args:
-        user_name (str): The unique username of the user whose account to deposit into.
-        account_name (str): The name of the account to deposit into.
-    Returns:
-        str: A JSON response containing the created transaction's information and the account modified.
+    ---
+    tags:
+      - Transactions
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user whose account to deposit into.
+          schema:
+            type: string
+        - name: account_name
+          in: path
+          required: true
+          description: The name of the account to deposit into.
+          schema:
+            type: string
+        - name: transaction
+          in: body
+          required: true
+          description: The transaction object containing the deposit information.
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+              currency:
+                type: string
+              description:
+                type: string
+
+    responses:
+        201:
+            description: A JSON response containing the created transaction's information and the account modified.
+        400:
+            description: Missing required transaction fields or invalid transaction type.
+        404:
+            description: Account not found.
     """
     accounts = ACCOUNTS.get(user_name, None)
     if not accounts:
@@ -72,11 +105,42 @@ def deposit(user_name: str, account_name: str) -> str:
 )
 def withdraw(user_name: str, account_name: str) -> str:
     """Withdraw from a bank account.
-    Args:
-        user_name (str): The unique username of the user whose account to withdraw from.
-        account_name (str): The name of the account to withdraw from.
-    Returns:
-        str: A JSON response containing the created transaction's information and the account modified.
+    ---
+    tags:
+      - Transactions
+    parameters:
+        - name: user_name
+          in: path
+          required: true
+          description: The unique username of the user whose account to withdraw from.
+          schema:
+            type: string
+        - name: account_name
+          in: path
+          required: true
+          description: The name of the account to withdraw from.
+          schema:
+            type: string
+        - name: transaction
+          in: body
+          required: true
+          description: The transaction object containing the withdrawal information.
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+              currency:
+                type: string
+              description:
+                type: string
+    responses:
+        201:
+            description: A JSON response containing the created transaction's information and the account modified.
+        400:
+            description: Missing required transaction fields or invalid transaction type.
+        404:
+            description: Account not found.
     """
     accounts = ACCOUNTS.get(user_name, None)
     if not accounts:
@@ -127,8 +191,34 @@ def withdraw(user_name: str, account_name: str) -> str:
 @transactions_bp.route("/api/v1/accounts/transfer", methods=["POST"])
 def transfer() -> str:
     """Transfer between accounts.
-    Returns:
-        str: A JSON response containing the created transaction's information and the accounts modified.
+    ---
+    tags:
+      - Transactions
+    parameters:
+        - name: transfer
+          in: body
+          required: true
+          description: The transfer object containing the transfer information.
+          schema:
+            type: object
+            properties:
+              amount:
+                type: number
+              currency:
+                type: string
+              source_account_name:
+                type: string
+              destination_account_name:
+                type: string
+              description:
+                type: string
+    responses:
+        201:
+            description: A JSON response containing the created transaction's information and the accounts modified.
+        400:
+            description: Missing required transaction fields or invalid transaction type.
+        404:
+            description: Source or destination account not found.
     """
     data = request.get_json()
     required_fields = [
@@ -221,10 +311,33 @@ def transfer() -> str:
 )
 def get_balance_and_transaction_history(account_name: str) -> str:
     """Get the balance of a bank account.
-    Args:
-        account_name (str): The name of the account to retrieve the balance for.
-    Returns:
-        str: A JSON response containing the account's balance.
+    ---
+    tags:
+      - Transactions
+    parameters:
+        - name: account_name
+          in: path
+          required: true
+          description: The name of the account to retrieve the balance for.
+          schema:
+            type: string
+        - name: balance
+          in: query
+          required: false
+          description: Set to 'true' to include the account balance.
+          schema:
+            type: boolean
+        - name: transactions
+          in: query
+          required: false
+          description: Set to 'true' to include the account transaction history.
+          schema:
+            type: boolean
+    responses:
+        200:
+            description: A JSON response containing the account's balance and transaction history.
+        404:
+            description: Account not found.
     """
     user_name = ACCOUNT_NAME_TO_USERNAME.get(account_name, None)
     if not user_name:
@@ -264,10 +377,13 @@ def get_balance_and_transaction_history(account_name: str) -> str:
 @transactions_bp.route("/api/v1/accounts/history/all_transactions", methods=["GET"])
 def get_all_transactions() -> str:
     """Get all transactions.
-    Returns:
-        str: A JSON response containing all transactions.
+    ---
+    tags:
+      - Transactions
+    responses:
+        200:
+            description: A JSON response containing all transactions.
     """
-
     return (
         jsonify(
             {

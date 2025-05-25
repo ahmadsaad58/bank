@@ -1,8 +1,7 @@
+import os
+import pickle
 from collections import defaultdict
 from typing import Dict, List
-import pickle
-import os
-
 
 from bank.models.bank_account import BankAccount
 from bank.models.transaction import Transaction
@@ -19,14 +18,19 @@ TRANSACTIONS: List[Transaction] = []
 
 DATA_PATH = "data/bank_data.pkl"
 
+
 def save_data():
     with open(DATA_PATH, "wb") as f:
-        pickle.dump({
-            "USERS": USERS,
-            "ACCOUNT_NAME_TO_USERNAME": ACCOUNT_NAME_TO_USERNAME,
-            "ACCOUNTS": ACCOUNTS,
-            "TRANSACTIONS": TRANSACTIONS,
-        }, f)
+        pickle.dump(
+            {
+                "USERS": USERS,
+                "ACCOUNT_NAME_TO_USERNAME": ACCOUNT_NAME_TO_USERNAME,
+                "ACCOUNTS": ACCOUNTS,
+                "TRANSACTIONS": TRANSACTIONS,
+            },
+            f,
+        )
+
 
 def load_data():
     if os.path.exists(DATA_PATH):
@@ -36,4 +40,3 @@ def load_data():
             ACCOUNT_NAME_TO_USERNAME.update(data.get("ACCOUNT_NAME_TO_USERNAME", {}))
             ACCOUNTS.update(data.get("ACCOUNTS", {}))
             TRANSACTIONS.extend(data.get("TRANSACTIONS", []))
-
