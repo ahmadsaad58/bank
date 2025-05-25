@@ -1,20 +1,6 @@
-from collections import defaultdict
-from typing import Dict, List
+from flask import Blueprint, jsonify
 
-from flask import Blueprint, Flask, jsonify
-
-from bank.models.bank_account import BankAccount
-from bank.models.transaction import Transaction
-from bank.models.user import User
-
-# Store Users: username -> User
-USERS: Dict[str, User] = {}
-# Store Users: account_name -> username
-ACCOUNT_NAME_TO_USERNAME: Dict[str, str] = {}
-# Store BankAccounts: username -> List[BankAccount]
-ACCOUNTS: Dict[str, List[BankAccount]] = defaultdict(list)
-# Store all Transactions, typically linked to accounts for history retrieval
-TRANSACTIONS: List[Transaction] = []
+from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME
 
 utilities_bp = Blueprint("utilities", __name__)
 

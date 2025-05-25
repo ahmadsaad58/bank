@@ -5,6 +5,10 @@ from bank.api.transactions import transactions_bp
 from bank.api.users import users_bp
 from bank.api.utilities import utilities_bp
 
+from bank.api.data.data import load_data
+
+load_data()
+
 app = Flask(__name__)
 app.register_blueprint(users_bp)
 app.register_blueprint(accounts_bp)

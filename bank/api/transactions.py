@@ -1,11 +1,12 @@
 from flask import Blueprint, jsonify, request
 
-from bank.api.utilities import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, TRANSACTIONS
+from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, TRANSACTIONS, save_data
 from bank.models.enums import TransactionType
 from bank.models.transaction import Transaction
 from bank.utils.utils import parse_boolean_query_param
 
 transactions_bp = Blueprint("transactions", __name__)
+
 
 @transactions_bp.route(
     "/api/v1/accounts/deposit/<string:user_name>/<string:account_name>",
@@ -46,7 +47,7 @@ def deposit(user_name: str, account_name: str) -> str:
         )
         TRANSACTIONS.append(new_transaction)
         accounts[account_to_update].process_transaction(new_transaction)
-
+        save_data()
         return (
             jsonify(
                 {
@@ -104,7 +105,7 @@ def withdraw(user_name: str, account_name: str) -> str:
         )
         TRANSACTIONS.append(new_transaction)
         accounts[account_to_update].process_transaction(new_transaction)
-
+        save_data()
         return (
             jsonify(
                 {
@@ -190,7 +191,7 @@ def transfer() -> str:
         destination_accounts[destination_account_to_update].process_transaction(
             in_transaction
         )
-
+        save_data()
         return (
             jsonify(
                 {
@@ -215,7 +216,9 @@ def transfer() -> str:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 
-@transactions_bp.route("/api/v1/accounts/history/<string:account_name>", methods=["GET"])
+@transactions_bp.route(
+    "/api/v1/accounts/history/<string:account_name>", methods=["GET"]
+)
 def get_balance_and_transaction_history(account_name: str) -> str:
     """Get the balance of a bank account.
     Args:
@@ -244,7 +247,8 @@ def get_balance_and_transaction_history(account_name: str) -> str:
             }
             if show_transactions:
                 ret["transactions"] = [
-                    transaction.serialize_dict() for transaction in account.transaction_history
+                    transaction.serialize_dict()
+                    for transaction in account.transaction_history
                 ]
             if show_balance:
                 ret["balance"] = account.balance
@@ -263,17 +267,15 @@ def get_all_transactions() -> str:
     Returns:
         str: A JSON response containing all transactions.
     """
-    
+
     return (
         jsonify(
             {
                 "count": len(TRANSACTIONS),
                 "transactions": [
                     transaction.serialize_dict() for transaction in TRANSACTIONS
-                ]
+                ],
             }
         ),
         200,
     )
-
-    

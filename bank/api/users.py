@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from bank.api.utilities import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS
+from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS, save_data
 from bank.models.user import ContactInfo, User
 
 users_bp = Blueprint("users", __name__)
@@ -68,6 +68,7 @@ def create_user() -> str:
             contact_info=ContactInfo(**data["contact_info"]),
         )
         USERS[new_user.username] = new_user
+        save_data()
         return (
             jsonify(
                 {
@@ -107,6 +108,7 @@ def update_user(user_name: str) -> str:
         if "contact_info" in data:
             for key, value in data["contact_info"].items():
                 setattr(user.contact_info, key, value)
+        save_data()
         return (
             jsonify({"message": "User updated successfully.", "user": user.__dict__}),
             200,
@@ -128,7 +130,7 @@ def delete_user(user_name: str) -> str:
         return jsonify({"error": "User not found"}), 404
     USERS.pop(user_name, None)
     accounts_to_remove = ACCOUNTS.pop(user_name, None)
-    print(accounts_to_remove)
+    save_data()
     if accounts_to_remove:
         for bank_account in accounts_to_remove:
             ACCOUNT_NAME_TO_USERNAME.pop(bank_account.account_name, None)

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from bank.api.utilities import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS
+from bank.api.data.data import ACCOUNT_NAME_TO_USERNAME, ACCOUNTS, USERS, save_data
 from bank.models.bank_account import BankAccount
 from bank.models.enums import AccountType
 
@@ -66,8 +66,7 @@ def create_account() -> str:
         )
         ACCOUNTS[data["username"]].append(new_account)
         ACCOUNT_NAME_TO_USERNAME[new_account.account_name] = data["username"]
-
-        print(f"Account created: {new_account.account_name} for user {data['username']}")
+        save_data()
 
         return (
             jsonify(
@@ -122,6 +121,7 @@ def update_account(user_name: str, account_name: str) -> str:
             accounts[account_to_update].currency = data["currency"]
         if "balance" in data:
             accounts[account_to_update].balance = float(data["balance"])
+        save_data()
         return (
             jsonify(
                 {
@@ -165,6 +165,7 @@ def delete_account(user_name: str, account_name: str) -> str:
     try:
         accounts.pop(account_to_update)
         ACCOUNT_NAME_TO_USERNAME.pop(account_name, None)
+        save_data()
         return (
             jsonify({"message": "Account deleted successfully."}),
             200,
