@@ -54,10 +54,12 @@ class BankAccount:
         """
         if not self.account_owner:
             raise ValueError("An account must have at an owner.")
+        # Can have 0 balance at the start, but not negative
         if self.initial_deposit < 0:
             raise ValueError("Initial deposit cannot be negative.")
 
         self.account_name = f"{self.account_type.value.lower()}_{self.account_id[:5]}"
+        # If there is an inital deposit, process it as a deposit transaction
         if self.initial_deposit > 0:
             initial_deposit_txn = Transaction(
                 type=TransactionType.DEPOSIT,
@@ -310,11 +312,11 @@ class BankAccount:
         elif transaction.type == TransactionType.TRANSFER_IN:
             return self._process_transfer_in(transaction)
         elif transaction.type == TransactionType.TRANSFER_OUT:
-            self._process_transfer_out(transaction)
+            return self._process_transfer_out(transaction)
         elif transaction.type == TransactionType.FEE:
-            self._process_fee(transaction)
+            return self._process_fee(transaction)
         elif transaction.type == TransactionType.INTEREST:
-            self._process_deposit(transaction)
+            return self._process_deposit(transaction)
         else:
             print(f"Warning: Unhandled transaction type: {transaction.type}")
             transaction.status = TransactionStatus.FAILED
