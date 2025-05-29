@@ -31,6 +31,7 @@ def index() -> str:
     """
     return "Welcome to the Simple Bank API!"
 
+
 @utilities_bp.route("/health", methods=["GET"])
 def health_check() -> str:
     """Health check endpoint to verify the API is running.
@@ -44,6 +45,7 @@ def health_check() -> str:
             description: Service Unavailable if the API is not healthy.
     """
     return "API is healthy!", 200
+
 
 @utilities_bp.route("/ping", methods=["GET"])
 def ping() -> str:

@@ -41,7 +41,7 @@ class BankAccount:
     account_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     account_name: str = field(init=False)
     # Balance is not set at initialization, but managed
-    balance: float = 0.0
+
     transaction_history: List[Transaction] = field(default_factory=list)
     created_at: str = field(default_factory=lambda: time.time())
     # Default status is ACTIVE
@@ -52,6 +52,7 @@ class BankAccount:
         Raises:
             ValueError: If the initial deposit is negative or if there are no owners.
         """
+        self.balance: float = 0.0
         if not self.account_owner:
             raise ValueError("An account must have at an owner.")
         # Can have 0 balance at the start, but not negative

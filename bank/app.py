@@ -16,7 +16,7 @@ limiter = Limiter(
     get_remote_address,
     app=app,
     # TODO: Configure the rate limit
-    default_limits=["100 per hour"],  
+    default_limits=["100 per hour"],
 )
 swagger = Swagger(app)
 app.register_blueprint(users_bp)

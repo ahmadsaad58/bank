@@ -79,7 +79,9 @@ def deposit(user_name: str, account_name: str) -> str:
             description=data["description"],
         )
         TRANSACTIONS.append(new_transaction)
-        processed, message, _ = accounts[account_to_update].process_transaction(new_transaction)
+        processed, message, _ = accounts[account_to_update].process_transaction(
+            new_transaction
+        )
         save_data()
         if not processed:
             return jsonify({"error": message}), 400
@@ -168,7 +170,9 @@ def withdraw(user_name: str, account_name: str) -> str:
             description=data["description"],
         )
         TRANSACTIONS.append(new_transaction)
-        processed, message, _ = accounts[account_to_update].process_transaction(new_transaction)
+        processed, message, _ = accounts[account_to_update].process_transaction(
+            new_transaction
+        )
         save_data()
         if not processed:
             return jsonify({"error": message}), 400
@@ -277,30 +281,36 @@ def transfer() -> str:
         )
 
         TRANSACTIONS.extend([out_transaction, in_transaction])
-        processed_out, message_out, _ = source_accounts[source_account_to_update].process_transaction(out_transaction)
-        processed_in, message_in, _ = destination_accounts[destination_account_to_update].process_transaction(
-            in_transaction
-        )
+        processed_out, message_out, _ = source_accounts[
+            source_account_to_update
+        ].process_transaction(out_transaction)
+        processed_in, message_in, _ = destination_accounts[
+            destination_account_to_update
+        ].process_transaction(in_transaction)
         save_data()
         # If either transaction fails, we need to undo the changes made to both accounts
         # Processing of transaction in to destination account failed so undo the transaction by transferring in to the source/out account
         if not processed_in:
-            source_accounts[source_account_to_update].process_transaction( 
+            source_accounts[source_account_to_update].process_transaction(
                 Transaction(
                     type=TransactionType.TRANSFER_IN,
                     amount=float(data["amount"]),
                     currency=data["currency"],
                     source_account_name=data["source_account_name"],
                     destination_account_name=data["source_account_name"],
-                    description="Transfer in to destination account due to failure in processing, transferring out. With description: " + data["description"],
+                    description="Transfer in to destination account due to failure in processing, transferring out. With description: "
+                    + data["description"],
                 )
             )
             save_data()
-            return jsonify(
-                {
-                    "transfer in error": f"Failed to process transaction into destination account: {message_in}",
-                }
-            ), 400
+            return (
+                jsonify(
+                    {
+                        "transfer in error": f"Failed to process transaction into destination account: {message_in}",
+                    }
+                ),
+                400,
+            )
         # Processing of transaction out from source account failed so undo the transaction by transferring out to the destination account
         if not processed_out:
             destination_accounts[destination_account_to_update].process_transaction(
@@ -310,16 +320,20 @@ def transfer() -> str:
                     currency=data["currency"],
                     source_account_name=data["destination_account_name"],
                     destination_account_name=data["destination_account_name"],
-                    description="Transfer out to source account due to failure in processing, transferring in. With description: " + data["description"],
+                    description="Transfer out to source account due to failure in processing, transferring in. With description: "
+                    + data["description"],
                 )
             )
             save_data()
-            return jsonify(
-                {   
-                    "transfer out error": f"Failed to process transaction out of source account: {message_out}",
-                }
-            ), 400
-    
+            return (
+                jsonify(
+                    {
+                        "transfer out error": f"Failed to process transaction out of source account: {message_out}",
+                    }
+                ),
+                400,
+            )
+
         return (
             jsonify(
                 {
